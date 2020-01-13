@@ -6,7 +6,7 @@ export function routes() {
   const router = Router();
 
   router.get('/', (req: Request, res: Response) => {
-    res.json({ Hewwo: 'Howwo' });
+    res.json({ hello: 'World' });
   });
 
   router.get('/api/users', getAllUsers);
