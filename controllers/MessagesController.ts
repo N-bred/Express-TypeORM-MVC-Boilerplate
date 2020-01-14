@@ -1,16 +1,37 @@
-import { getConnection } from 'typeorm';
+import { Connection, Repository } from 'typeorm';
 import { Messagges } from '../models/Messages';
 import { Request, Response, NextFunction } from 'express';
 
-export async function getAllMessagges(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const messagges = await getConnection()
-    .getRepository(Messagges)
-    .find();
+export class MessaggesController {
+  private repository: Repository<Messagges>;
+  constructor(private connection: Connection) {
+    this.repository = connection.getRepository(Messagges);
+  }
 
-  res.json(messagges);
-  next();
+  public getAllMessagges = async (req: Request, res: Response) => {
+    const messages = await this.repository.find();
+
+    return res.json(messages);
+  };
+
+  public createMessage = async (req: Request, res: Response) => {
+    const message = this.repository.create(req.body);
+
+    await this.repository.save(message);
+
+    return res.json(message);
+  };
+
+  public updateMessage = async (req: Request, res: Response) => {
+    const { id, content } = req.body;
+    await this.repository.update(id, { content });
+
+    return res.send('Message updated');
+  };
+
+  public deleteMessage = async (req: Request, res: Response) => {
+    await this.repository.delete(req.body.id);
+
+    return res.send('Message deleted');
+  };
 }

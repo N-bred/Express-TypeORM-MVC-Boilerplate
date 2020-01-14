@@ -1,75 +1,50 @@
-import { getConnection } from 'typeorm';
+import { Connection, Repository } from 'typeorm';
 import { User } from '../models/User';
 import { Request, Response, NextFunction } from 'express';
 
-export async function getAllUsers(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const users = await getConnection()
-    .getRepository(User)
-    .find();
-
-  res.json(users);
-  next();
-}
-
-export async function createUser(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const { username, age } = req.body;
-
-  const user = getConnection()
-    .getRepository(User)
-    .create({ username, age });
-
-  await getConnection()
-    .getRepository(User)
-    .save(user);
-
-  res.redirect('/api/users');
-  next();
-}
-
-export async function updateUser(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const { id, username, age } = req.body;
-
-  try {
-    await getConnection()
-      .getRepository(User)
-      .update(id, { username, age });
-  } catch (e) {
-    if (e) throw e;
+export class UserController {
+  private repository: Repository<User>;
+  constructor(private connection: Connection) {
+    this.repository = connection.getRepository(User);
   }
 
-  res.send('User updated');
+  public getAllUsers = async (req: Request, res: Response) => {
+    const users = await this.repository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.messagges', 'messagge')
+      .getMany();
+    return res.json(users);
+  };
 
-  next();
-}
+  public getUserById = async (req: Request, res: Response) => {
+    const user = await this.repository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.messagges', 'messagge')
+      .where('user.id = :id', { id: req.params.id })
+      .getMany();
 
-export async function deleteUser(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const { id } = req.params;
+    return res.json(user);
+  };
 
-  try {
-    await getConnection()
-      .getRepository(User)
-      .delete(id);
-  } catch (e) {
-    if (e) throw e;
-  }
+  public createUser = async (req: Request, res: Response) => {
+    const user = this.repository.create(req.body);
 
-  res.send('User deleted');
+    await this.repository.save(user);
 
-  next();
+    return res.json({ ...user, status: 'User created' });
+  };
+
+  public updateUser = async (req: Request, res: Response) => {
+    const { id, username, age } = req.body;
+
+    await this.repository.update(id, { username, age });
+
+    return res.send('User updated');
+  };
+
+  public deleteUser = async (req: Request, res: Response) => {
+    await this.repository.delete(req.body.id);
+
+    return res.send('User deleted');
+  };
 }

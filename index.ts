@@ -15,7 +15,7 @@ createConnection(options).then(connection => {
   const app = express();
   app.use(bp.json());
   app.use(bp.urlencoded({ extended: true }));
-  app.use('/', routes());
+  app.use('/', routes(connection));
 
   app.listen(3000, err => {
     if (err) throw err;

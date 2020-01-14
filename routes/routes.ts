@@ -1,28 +1,38 @@
 import { Router, Request, Response } from 'express';
-import {
-  getAllUsers,
-  createUser,
-  deleteUser,
-  updateUser
-} from '../controllers/UserController';
-import { getAllMessagges } from '../controllers/MessagesController';
+import { UserController } from '../controllers/UserController';
+import { MessaggesController } from '../controllers/MessagesController';
+import { Connection } from 'typeorm';
 
-export function routes() {
+export function routes(connection: Connection) {
   const router = Router();
+
+  const userController = new UserController(connection);
+  const messaggesController = new MessaggesController(connection);
 
   router.get('/', (req: Request, res: Response) => {
     res.json({ hello: 'World' });
   });
 
-  router.get('/api/users', getAllUsers);
+  // GET
 
-  router.get('/api/messagges', getAllMessagges);
+  router.get('/api/users', userController.getAllUsers);
+  router.get('/api/users/:id', userController.getUserById);
+  router.get('/api/messagges', messaggesController.getAllMessagges);
 
-  router.post('/api/new/user', createUser);
+  // POST
 
-  router.put('/api/update/user', updateUser);
+  router.post('/api/new/user', userController.createUser);
+  router.post('/api/new/messagge', messaggesController.createMessage);
 
-  router.delete('/api/delete/user/:id', deleteUser);
+  // PUT
+
+  router.put('/api/update/user', userController.updateUser);
+  router.put('/api/update/messagge', messaggesController.updateMessage);
+
+  // DELETE
+
+  router.delete('/api/delete/user', userController.deleteUser);
+  router.delete('/api/delete/messagge', messaggesController.deleteMessage);
 
   return router;
 }
